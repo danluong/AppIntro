@@ -36,6 +36,7 @@ public abstract class AppIntro extends AppCompatActivity {
     private boolean isVibrateOn = false;
     private int vibrateIntensity = 20;
     private boolean skipButtonEnabled = true;
+    private boolean previousProgressButtonEnabled = true;
     private boolean progressButtonEnabled = true;
     private int selectedIndicatorColor = DEFAULT_COLOR;
     private int unselectedIndicatorColor = DEFAULT_COLOR;
@@ -65,6 +66,13 @@ public abstract class AppIntro extends AppCompatActivity {
         nextButton = findViewById(R.id.next);
         doneButton = findViewById(R.id.done);
         mVibrator = (Vibrator) this.getSystemService(VIBRATOR_SERVICE);
+        mPagerAdapter = new PagerAdapter(super.getSupportFragmentManager(), fragments);
+        pager = (AppIntroViewPager) findViewById(R.id.view_pager);
+        pager.setAdapter(this.mPagerAdapter);
+
+        if (savedInstanceState != null) {
+            restoreLockingState(savedInstanceState);
+        }
 
         skipButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -96,10 +104,6 @@ public abstract class AppIntro extends AppCompatActivity {
             }
         });
 
-        mPagerAdapter = new PagerAdapter(super.getSupportFragmentManager(), fragments);
-        pager = (AppIntroViewPager) findViewById(R.id.view_pager);
-
-        pager.setAdapter(this.mPagerAdapter);
         /**
          *  ViewPager.setOnPageChangeListener is now deprecated. Use addOnPageChangeListener() instead of it.
          */
@@ -116,8 +120,14 @@ public abstract class AppIntro extends AppCompatActivity {
 
                 // Whenever a new slide is swiped to, the button visibility state is reset
                 // This allows the button to be redisplayed if a user swipes to a previous slide.
-                setProgressButtonEnabled(true);
-
+                if (!pager.isNextPagingEnabled()) {
+                    if (pager.getCurrentItem() < pager.getLockPage()) {
+                        setProgressButtonEnabled(previousProgressButtonEnabled);
+                        pager.setNextPagingEnabled(true);
+                    }
+                } else {
+                    setProgressButtonEnabled(progressButtonEnabled);
+                }
                 setButtonState(skipButton, skipButtonEnabled);
             }
 
@@ -137,6 +147,26 @@ public abstract class AppIntro extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("progressButtonEnabled", progressButtonEnabled);
+        outState.putBoolean("skipButtonEnabled", skipButtonEnabled);
+        outState.putBoolean("nextEnabled", pager.isPagingEnabled());
+        outState.putBoolean("nextPagingEnabled", pager.isNextPagingEnabled());
+        outState.putInt("lockPage", pager.getLockPage());
+    }
+
+
+    protected void restoreLockingState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        this.progressButtonEnabled = savedInstanceState.getBoolean("progressButtonEnabled");
+        this.skipButtonEnabled = savedInstanceState.getBoolean("skipButtonEnabled");
+        pager.setPagingEnabled(savedInstanceState.getBoolean("nextEnabled"));
+        pager.setNextPagingEnabled(savedInstanceState.getBoolean("nextPagingEnabled"));
+        pager.setLockPage(savedInstanceState.getInt("lockPage"));
+    }
+
     public AppIntroViewPager getPager() {
         return pager;
     }
@@ -150,9 +180,9 @@ public abstract class AppIntro extends AppCompatActivity {
         indicatorContainer.addView(mController.newInstance(this));
 
         mController.initialize(slidesNumber);
-        if(selectedIndicatorColor != DEFAULT_COLOR)
+        if (selectedIndicatorColor != DEFAULT_COLOR)
             mController.setSelectedIndicatorColor(selectedIndicatorColor);
-        if(unselectedIndicatorColor != DEFAULT_COLOR)
+        if (unselectedIndicatorColor != DEFAULT_COLOR)
             mController.setUnselectedIndicatorColor(unselectedIndicatorColor);
     }
 
@@ -177,11 +207,10 @@ public abstract class AppIntro extends AppCompatActivity {
     }
 
     /**
-     * Setting to to display or hide the Next or Done button. This is a one-shot setting and
-     * should be set on each slide, and will be reset to true if the user leaves a slide by swiping.
-     * Recommend using {@link #onDotSelected(int)} (when working) to set visibility upon access to page.
+     * Setting to to display or hide the Next or Done button. This is a static setting and
+     * button state is maintained on each slide until explicitly changed.
      *
-     * @param progressButtonEnabled Set true to display Next/Done. False to hide.
+     * @param progressButtonEnabled Set true to display. False to hide.
      */
     public void setProgressButtonEnabled(boolean progressButtonEnabled) {
         this.progressButtonEnabled = progressButtonEnabled;
@@ -207,6 +236,12 @@ public abstract class AppIntro extends AppCompatActivity {
         return skipButtonEnabled;
     }
 
+    /**
+     * Setting to to display or hide the Skip button. This is a static setting and
+     * button state is maintained on each slide until explicitly changed.
+     *
+     * @param skipButtonEnabled Set true to display. False to hide.
+     */
     public void setSkipButtonEnabled(boolean skipButtonEnabled) {
         this.skipButtonEnabled = skipButtonEnabled;
         setButtonState(skipButton, skipButtonEnabled);
@@ -340,15 +375,17 @@ public abstract class AppIntro extends AppCompatActivity {
         return super.onKeyDown(code, kvent);
     }
 
-    /** Set DEFAULT_COLOR for color value if you don't want to change it */
-    public void setIndicatorColor(int selectedIndicatorColor, int unselectedIndicatorColor){
+    /**
+     * Set DEFAULT_COLOR for color value if you don't want to change it
+     */
+    public void setIndicatorColor(int selectedIndicatorColor, int unselectedIndicatorColor) {
         this.selectedIndicatorColor = selectedIndicatorColor;
         this.unselectedIndicatorColor = unselectedIndicatorColor;
 
-        if(mController != null){
-            if(selectedIndicatorColor != DEFAULT_COLOR)
+        if (mController != null) {
+            if (selectedIndicatorColor != DEFAULT_COLOR)
                 mController.setSelectedIndicatorColor(selectedIndicatorColor);
-            if(unselectedIndicatorColor != DEFAULT_COLOR)
+            if (unselectedIndicatorColor != DEFAULT_COLOR)
                 mController.setUnselectedIndicatorColor(unselectedIndicatorColor);
         }
     }
@@ -361,6 +398,7 @@ public abstract class AppIntro extends AppCompatActivity {
      * @param pagingState Set true to disable forward swiping. False to enable.
      */
     public void setNextPageSwipeLock(boolean pagingState) {
+        previousProgressButtonEnabled = progressButtonEnabled;
         pager.setNextPagingEnabled(pagingState);
         setProgressButtonEnabled(pagingState);
     }

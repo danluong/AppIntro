@@ -16,16 +16,30 @@ public class AppIntroViewPager extends ViewPager {
         super(context, attrs);
         pagingEnabled = true;
         nextPagingEnabled = true;
+        lockPage = 0;
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent event) {
+        if (checkPagingState(event)) {
+            return false;
+        }
+
+        return super.onInterceptTouchEvent(event);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(!pagingEnabled){
+        if (checkPagingState(event)) {
             return false;
         }
-        // disable lock page logic if swiped to a previous page
-        if (!nextPagingEnabled && (lockPage != getCurrentItem())) {
-            nextPagingEnabled = true;
+
+        return super.onTouchEvent(event);
+    }
+
+    private boolean checkPagingState(MotionEvent event) {
+        if (!pagingEnabled) {
+            return true;
         }
 
         if (!nextPagingEnabled) {
@@ -34,12 +48,11 @@ public class AppIntroViewPager extends ViewPager {
             }
             if (event.getAction() == MotionEvent.ACTION_MOVE) {
                 if (detectSwipeToRight(event)) {
-                    return false;
+                    return true;
                 }
             }
         }
-
-        return super.onTouchEvent(event);
+        return false;
     }
 
     // To enable/disable swipe
@@ -60,6 +73,14 @@ public class AppIntroViewPager extends ViewPager {
 
     public void setPagingEnabled(boolean pagingEnabled) {
         this.pagingEnabled = pagingEnabled;
+    }
+
+    public int getLockPage() {
+        return lockPage;
+    }
+
+    public void setLockPage(int lockPage) {
+        this.lockPage = lockPage;
     }
 
     // Detects the direction of swipe. Right or left.
