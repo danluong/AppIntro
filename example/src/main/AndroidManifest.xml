@@ -3,6 +3,9 @@
     package="com.github.paolorotolo.appintroexample" >
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -29,6 +32,13 @@
             android:label="@string/title_activity_custom_intro"
             android:theme="@style/FullscreenTheme">
         </activity>
+        <activity android:name=".PermissionsIntro"
+            android:label="@string/title_activity_permissions_intro"
+            android:theme="@style/FullscreenTheme"/>
+        <activity
+            android:name=".PermissionsIntro2"
+            android:label="@string/title_activity_permissions_intro"
+            android:theme="@style/FullscreenTheme" />
         <activity android:name=".SecondLayoutIntro"
             android:label="@string/title_activity_second_intro"
             android:theme="@style/FullscreenTheme"/>

@@ -1,7 +1,7 @@
 package com.github.paolorotolo.appintro;
 
-import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.annotation.ColorInt;
@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
@@ -21,32 +22,36 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 public abstract class AppIntro extends AppCompatActivity {
     public final static int DEFAULT_COLOR = 1;
+    private static final int DEFAULT_SCROLL_DURATION_FACTOR = 1;
 
-    private PagerAdapter mPagerAdapter;
-    private AppIntroViewPager pager;
-    private List<Fragment> fragments = new Vector<>();
-    private List<ImageView> dots;
-    private int slidesNumber;
-    private Vibrator mVibrator;
-    private IndicatorController mController;
-    private boolean isVibrateOn = false;
-    private int vibrateIntensity = 20;
-    private boolean skipButtonEnabled = true;
-    private boolean baseProgressButtonEnabled = true;
-    private boolean progressButtonEnabled = true;
-    private int selectedIndicatorColor = DEFAULT_COLOR;
-    private int unselectedIndicatorColor = DEFAULT_COLOR;
-    private View skipButton;
-    private View nextButton;
-    private View doneButton;
-    private int savedCurrentItem;
+    protected PagerAdapter mPagerAdapter;
+    protected AppIntroViewPager pager;
+    protected List<Fragment> fragments = new Vector<>();
+    protected List<ImageView> dots;
+    protected int slidesNumber;
+    protected Vibrator mVibrator;
+    protected IndicatorController mController;
+    protected boolean isVibrateOn = false;
+    protected int vibrateIntensity = 20;
+    protected boolean skipButtonEnabled = true;
+    protected boolean baseProgressButtonEnabled = true;
+    protected boolean progressButtonEnabled = true;
+    protected int selectedIndicatorColor = DEFAULT_COLOR;
+    protected int unselectedIndicatorColor = DEFAULT_COLOR;
+    protected View skipButton;
+    protected View nextButton;
+    protected View doneButton;
+    protected int savedCurrentItem;
+    protected ArrayList<PermissionObject> permissionsArray = new ArrayList<>();
+    private static final int PERMISSIONS_REQUEST_ALL_PERMISSIONS = 1;
 
-    static enum TransformType {
+    enum TransformType {
         FLOW,
         DEPTH,
         ZOOM,
@@ -60,8 +65,6 @@ public abstract class AppIntro extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.intro_layout);
 
         skipButton = findViewById(R.id.skip);
@@ -92,7 +95,28 @@ public abstract class AppIntro extends AppCompatActivity {
                 if (isVibrateOn) {
                     mVibrator.vibrate(vibrateIntensity);
                 }
-                pager.setCurrentItem(pager.getCurrentItem() + 1);
+
+                boolean requestPermission = false;
+                int position = 0;
+
+                for (int i = 0; i < permissionsArray.size(); i++) {
+                    requestPermission = pager.getCurrentItem() + 1 == permissionsArray.get(i).getPosition();
+                    position = i;
+                    break;
+                }
+
+                if (requestPermission) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        requestPermissions(permissionsArray.get(position).getPermission(), PERMISSIONS_REQUEST_ALL_PERMISSIONS);
+                        permissionsArray.remove(position);
+                    } else {
+                        pager.setCurrentItem(pager.getCurrentItem() + 1);
+                        onNextPressed();
+                    }
+                } else {
+                    pager.setCurrentItem(pager.getCurrentItem() + 1);
+                    onNextPressed();
+                }
             }
         });
 
@@ -105,6 +129,11 @@ public abstract class AppIntro extends AppCompatActivity {
                 onDonePressed();
             }
         });
+
+        mPagerAdapter = new PagerAdapter(getSupportFragmentManager(), fragments);
+        pager = (AppIntroViewPager) findViewById(R.id.view_pager);
+
+        pager.setAdapter(this.mPagerAdapter);
 
         /**
          *  ViewPager.setOnPageChangeListener is now deprecated. Use addOnPageChangeListener() instead of it.
@@ -133,6 +162,7 @@ public abstract class AppIntro extends AppCompatActivity {
                     setProgressButtonEnabled(progressButtonEnabled);
                 }
                 setButtonState(skipButton, skipButtonEnabled);
+                onSlideChanged();
             }
 
             @Override
@@ -142,6 +172,8 @@ public abstract class AppIntro extends AppCompatActivity {
         });
         pager.setCurrentItem(savedCurrentItem); //required for triggering onPageSelected for first page
 
+        setScrollDurationFactor(DEFAULT_SCROLL_DURATION_FACTOR);
+
         init(savedInstanceState);
         slidesNumber = fragments.size();
 
@@ -150,6 +182,11 @@ public abstract class AppIntro extends AppCompatActivity {
         } else {
             initController();
         }
+    }
+
+
+    protected void setScrollDurationFactor(int factor) {
+        pager.setScrollDurationFactor(factor);
     }
 
     @Override
@@ -180,7 +217,6 @@ public abstract class AppIntro extends AppCompatActivity {
         return pager;
     }
 
-
     private void initController() {
         if (mController == null)
             mController = new DefaultIndicatorController();
@@ -195,16 +231,6 @@ public abstract class AppIntro extends AppCompatActivity {
             mController.setUnselectedIndicatorColor(unselectedIndicatorColor);
     }
 
-    public void selectDot(int index) {
-        Resources res = getResources();
-        for (int i = 0; i < fragments.size(); i++) {
-            int drawableId = (i == index) ? (R.drawable.indicator_dot_white) : (R.drawable.indicator_dot_grey);
-            Drawable drawable = res.getDrawable(drawableId);
-            dots.get(i).setImageDrawable(drawable);
-        }
-        onDotSelected(index);
-    }
-
     public void addSlide(@NonNull Fragment fragment) {
         fragments.add(fragment);
         mPagerAdapter.notifyDataSetChanged();
@@ -213,6 +239,50 @@ public abstract class AppIntro extends AppCompatActivity {
     @NonNull
     public List<Fragment> getSlides() {
         return mPagerAdapter.getFragments();
+    }
+
+    public boolean isProgressButtonEnabled() {
+        return progressButtonEnabled;
+    }
+
+    public boolean isSkipButtonEnabled() {
+        return skipButtonEnabled;
+    }
+
+    private void setButtonState(View button, boolean show) {
+        if (show) {
+            button.setVisibility(View.VISIBLE);
+        } else {
+            button.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public void setOffScreenPageLimit(int limit) {
+        pager.setOffscreenPageLimit(limit);
+    }
+
+    public abstract void init(@Nullable Bundle savedInstanceState);
+
+    public abstract void onSkipPressed();
+
+    public abstract void onNextPressed();
+
+    public abstract void onDonePressed();
+
+    public abstract void onSlideChanged();
+
+    @Override
+    public boolean onKeyDown(int code, KeyEvent kvent) {
+        if (code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_BUTTON_A || code == KeyEvent.KEYCODE_DPAD_CENTER) {
+            ViewPager vp = (ViewPager) this.findViewById(R.id.view_pager);
+            if (vp.getCurrentItem() == vp.getAdapter().getCount() - 1) {
+                onDonePressed();
+            } else {
+                vp.setCurrentItem(vp.getCurrentItem() + 1);
+            }
+            return false;
+        }
+        return super.onKeyDown(code, kvent);
     }
 
     /**
@@ -237,57 +307,111 @@ public abstract class AppIntro extends AppCompatActivity {
         }
     }
 
-    public boolean isProgressButtonEnabled() {
-        return progressButtonEnabled;
-    }
-
-    public boolean isSkipButtonEnabled() {
-        return skipButtonEnabled;
-    }
-
-    private void setButtonState(View button, boolean show) {
-        if (show) {
-            button.setVisibility(View.VISIBLE);
-        } else {
-            button.setVisibility(View.INVISIBLE);
-        }
-    }
-
+    /**
+     * Override viewpager bar color
+     *
+     * @param color your color resource
+     */
     public void setBarColor(@ColorInt final int color) {
         LinearLayout bottomBar = (LinearLayout) findViewById(R.id.bottom);
         bottomBar.setBackgroundColor(color);
     }
 
+    /**
+     * Override separator color
+     *
+     * @param color your color resource
+     */
     public void setSeparatorColor(@ColorInt final int color) {
         TextView separator = (TextView) findViewById(R.id.bottom_separator);
         separator.setBackgroundColor(color);
     }
 
+    /**
+     * Override skip text
+     *
+     * @param text your text
+     */
     public void setSkipText(@Nullable final String text) {
         TextView skipText = (TextView) findViewById(R.id.skip);
         skipText.setText(text);
     }
 
+    /**
+     * Override done text
+     *
+     * @param text your text
+     */
     public void setDoneText(@Nullable final String text) {
         TextView doneText = (TextView) findViewById(R.id.done);
         doneText.setText(text);
     }
 
-
+    /**
+     * Override done button text color
+     *
+     * @param colorDoneText your color resource
+     */
     public void setColorDoneText(@ColorInt final int colorDoneText) {
         TextView doneText = (TextView) findViewById(R.id.done);
         doneText.setTextColor(colorDoneText);
     }
 
+    /**
+     * Override skip button color
+     *
+     * @param colorSkipButton your color resource
+     */
     public void setColorSkipButton(@ColorInt final int colorSkipButton) {
         TextView skip = (TextView) findViewById(R.id.skip);
         skip.setTextColor(colorSkipButton);
     }
 
+    /**
+     * Override Next button
+     *
+     * @param imageNextButton your drawable resource
+     */
     public void setImageNextButton(@DrawableRes final Drawable imageNextButton) {
         final ImageView nextButton = (ImageView) findViewById(R.id.next);
         nextButton.setImageDrawable(imageNextButton);
 
+    }
+
+    /**
+     * Allows the user to set the nav bar color of their app intro
+     *
+     * @param Color string form of color in 3 or 6 digit hex form (#ffffff)
+     */
+    public void setNavBarColor(String Color) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setNavigationBarColor(android.graphics.Color.parseColor(Color));
+        }
+    }
+
+    /**
+     * Allows the user to set the nav bar color of their app intro
+     *
+     * @param color int form of color. pass your color resource to here (R.color.your_color)
+     */
+    public void setNavBarColor(int color) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setNavigationBarColor(getResources().getColor(color));
+        }
+    }
+
+    /**
+     * Allows for setting statusbar visibility (true by default)
+     *
+     * @param isVisible put true to show status bar, and false to hide it
+     */
+    public void showStatusBar(boolean isVisible) {
+        if (!isVisible) {
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
     }
 
     /**
@@ -311,41 +435,22 @@ public abstract class AppIntro extends AppCompatActivity {
         setProgressButtonEnabled(showDone);
     }
 
-    public void setVibrate(boolean vibrate) {
-        this.isVibrateOn = vibrate;
+    /**
+     * sets vibration when buttons are pressed
+     *
+     * @param vibrationEnabled on/off
+     */
+    public void setVibrate(boolean vibrationEnabled) {
+        this.isVibrateOn = vibrationEnabled;
     }
 
+    /**
+     * sets vibration intensity
+     *
+     * @param intensity desired intensity
+     */
     public void setVibrateIntensity(int intensity) {
         this.vibrateIntensity = intensity;
-    }
-
-    public void setFadeAnimation() {
-        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.FADE));
-    }
-
-    public void setZoomAnimation() {
-        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.ZOOM));
-    }
-
-    public void setFlowAnimation() {
-        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.FLOW));
-    }
-
-    public void setSlideOverAnimation() {
-        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.SLIDE_OVER));
-    }
-
-    public void setDepthAnimation() {
-        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.DEPTH));
-    }
-
-
-    public void setCustomTransformer(@Nullable ViewPager.PageTransformer transformer) {
-        pager.setPageTransformer(true, transformer);
-    }
-
-    public void setOffScreenPageLimit(int limit) {
-        pager.setOffscreenPageLimit(limit);
     }
 
     /**
@@ -366,31 +471,57 @@ public abstract class AppIntro extends AppCompatActivity {
         mController = controller;
     }
 
-    public abstract void init(@Nullable Bundle savedInstanceState);
-
-    public abstract void onSkipPressed();
-
-    public abstract void onDonePressed();
-
-    public void onDotSelected(int index) {
-    }
-
-    @Override
-    public boolean onKeyDown(int code, KeyEvent kvent) {
-        if (code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_BUTTON_A || code == KeyEvent.KEYCODE_DPAD_CENTER) {
-            ViewPager vp = (ViewPager) this.findViewById(R.id.view_pager);
-            if (vp.getCurrentItem() == vp.getAdapter().getCount() - 1) {
-                onDonePressed();
-            } else {
-                vp.setCurrentItem(vp.getCurrentItem() + 1);
-            }
-            return false;
-        }
-        return super.onKeyDown(code, kvent);
+    /**
+     * Sets the animation of the intro to a fade animation
+     */
+    public void setFadeAnimation() {
+        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.FADE));
     }
 
     /**
+     * Sets the animation of the intro to a zoom animation
+     */
+    public void setZoomAnimation() {
+        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.ZOOM));
+    }
+
+    /**
+     * Sets the animation of the intro to a flow animation
+     */
+    public void setFlowAnimation() {
+        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.FLOW));
+    }
+
+    /**
+     * Sets the animation of the intro to a Slide Over animation
+     */
+    public void setSlideOverAnimation() {
+        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.SLIDE_OVER));
+    }
+
+    /**
+     * Sets the animation of the intro to a Depth animation
+     */
+    public void setDepthAnimation() {
+        pager.setPageTransformer(true, new ViewPageTransformer(ViewPageTransformer.TransformType.DEPTH));
+    }
+
+    /**
+     * Overrides viewpager transformer
+     *
+     * @param transformer your custom transformer
+     */
+    public void setCustomTransformer(@Nullable ViewPager.PageTransformer transformer) {
+        pager.setPageTransformer(true, transformer);
+    }
+
+    /**
+     * Overrides color of selected and unselected indicator colors
+     * <p/>
      * Set DEFAULT_COLOR for color value if you don't want to change it
+     *
+     * @param selectedIndicatorColor   your selected color
+     * @param unselectedIndicatorColor your unselected color
      */
     public void setIndicatorColor(int selectedIndicatorColor, int unselectedIndicatorColor) {
         this.selectedIndicatorColor = selectedIndicatorColor;
@@ -433,11 +564,37 @@ public abstract class AppIntro extends AppCompatActivity {
         if (lockEnable) {
             // if locking, save current progress button visibility
             baseProgressButtonEnabled = progressButtonEnabled;
-            setProgressButtonEnabled(!lockEnable);
+            //setProgressButtonEnabled(!lockEnable);
         } else {
             // if unlocking, restore original button visibility
             setProgressButtonEnabled(baseProgressButtonEnabled);
         }
         pager.setPagingEnabled(!lockEnable);
+    }
+
+    private static String TAG = "AppIntro1";
+
+    public void askForPermissions(String[] permissions, int slidesNumber) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (slidesNumber == 0) {
+                Toast.makeText(getBaseContext(), "Invalid Slide Number", Toast.LENGTH_SHORT).show();
+            } else {
+                PermissionObject permission = new PermissionObject(permissions, slidesNumber);
+                permissionsArray.add(permission);
+                setSwipeLock(true);
+            }
+        }
+    }
+
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_ALL_PERMISSIONS:
+                pager.setCurrentItem(pager.getCurrentItem() + 1);
+                break;
+            default:
+                Log.e(TAG, "Unexpected request code");
+        }
+
     }
 }

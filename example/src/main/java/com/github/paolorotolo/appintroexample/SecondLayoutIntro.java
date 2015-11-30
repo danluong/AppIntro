@@ -5,9 +5,6 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.github.paolorotolo.appintro.AppIntro2;
-import com.github.paolorotolo.appintroexample.slides2.FirstSlide2;
-import com.github.paolorotolo.appintroexample.slides2.SecondSlide2;
-import com.github.paolorotolo.appintroexample.slides2.ThirdSlide2;
 
 public class SecondLayoutIntro extends AppIntro2 {
     @Override
@@ -25,6 +22,16 @@ public class SecondLayoutIntro extends AppIntro2 {
     @Override
     public void onDonePressed() {
         loadMainActivity();
+    }
+
+    @Override
+    public void onNextPressed() {
+
+    }
+
+    @Override
+    public void onSlideChanged() {
+
     }
 
     public void getStarted(View v){
