@@ -1,34 +1,52 @@
 <resources>
-    <string name="app_name">AppIntroExample</string>
+    <!-- Main Strings -->
+    <string name="app_name">AppIntro Sample App</string>
+    <string name="appintro_logo">appintro_logo</string>
+    <string name="start">Start</string>
+    <string name="welcome_body">This app will show you some of the features of AppIntro. You can find more documentation on github.com/AppIntro/AppIntro</string>
 
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
-    <string name="customized_intro">Start custom Intro</string>
-    <string name="disable_swipe_intro_1">Disable swipe</string>
-    <string name="disable_swipe_intro_2">Disable swipe Layout 2</string>
-    <string name="default_intro">Start default Intro</string>
-    <string name="fade_animation">Set Fade animation</string>
-    <string name="custom_animation">Set custom Transformer</string>
-    <string name="progress_indicator">Set progress indicator</string>
-    <string name="custom_indicator">Set custom indicator</string>
-    <string name="custom_color_indicator">Set custom color indicator</string>
-    <string name="custom_color_progress_indicator">Set custom color progress indicator</string>
-    <string name="second_layout_intro">Start Intro with Layout 2</string>
-    <string name="title_activity_default_intro">DefaultIntro</string>
-    <string name="title_activity_custom_intro">CustomIntro</string>
-    <string name="title_activity_second_intro">SecondLayoutIntro</string>
-    <string name="title_activity_default_intro_disable">DisableSwipeDefaultLayoutIntro</string>
-    <string name="title_activity_second_intro_disable">DisableSwipeSecondLayoutIntro</string>
-    <string name="title_activity_disable_swipe_intro">DisableSwipeIntro</string>
-    <string name="skip">Y U DO DIS TO ME?</string>
-    <string name="header_animations">Animations</string>
-    <string name="header_indicators">Indicators</string>
-    <string name="zoom_animation">SET ZOOM ANIMATION</string>
-    <string name="flow_animation">SET FLOW ANIMATION</string>
-    <string name="depth_animation">SET DEPTH ANIMATION</string>
-    <string name="slideover_animation">SET SLIDEOVER ANIMATION</string>
-    <string name="disable_swiping_slide_text">The first button disables swiping to the next slide, but you can still swipe back to previous slides. Swiping is re-enabled after moving to a previous slide \n\n The second button disables swiping completely. \n\n The third button disables the Next/Done button, independent of locking swiping.</string>
-    <string name="permission_intro">Intro with Permissions</string>
-    <string name="permission_intro2">Intro with Permissions 2</string>
-    <string name="title_activity_permissions_intro">Permissions Intro</string>
+    <!-- Titles -->
+    <string name="default_intro_title">Default Intro</string>
+    <string name="default_java_intro_title">Java Default Intro</string>
+    <string name="default_intro2_title">Default Intro 2</string>
+    <string name="custom_layout_intro_title">Custom Layout Intro</string>
+    <string name="custom_background_intro_title">Custom Background Intro</string>
+    <string name="custom_margins_intro_title">Set Bar Margin</string>
+    <string name="slide_policy_intro_title">Slide Policy Intro</string>
+    <string name="perms_intro1_title">Permissions Intro</string>
+    <string name="perms_intro2_title">Permissions Intro 2</string>
+
+    <!-- 1st Tab Group -->
+    <string name="default_intro">This is the basic layout of the AppIntro library.</string>
+    <string name="default_java_intro">This is the basic layout of the AppIntro library in Java.</string>
+    <string name="default_intro2">This is the second layout provided by AppIntro library, with icons instead of text</string>
+    <string name="custom_layout_intro">This demonstrates the ability to pass a custom layout to the library for added customization.</string>
+    <string name="custom_background_intro">This demonstrates the ability to set custom backgrounds for different slides. Useful if you want images vs. colors in your backgrounds.</string>
+    <string name="slide_policy_intro">This demonstrates the SlidePolicy feature, with the possibility to block a user during a Intro.</string>
+    <string name="custom_margins_intro">This demonstrates the possibility to add some padding to the bottom of the slide to that it doesn\'t overlap with the bottom bar.</string>
+
+    <!-- 2nd Tab Group -->
+    <string name="perms_intro1">This demonstrates the ability to request runtime permission on any desired slide.</string>
+    <string name="perms_intro2">This demonstrates the ability to request permission on any slide specified using the second slide layout.</string>
+
+    <!-- SlidePolicy Example -->
+    <string name="please_select_the_checkbox_before_proceeding">Please select the Checkbox before proceeding</string>
+    <string name="slidepolicy_example_heading">SlidePolicy Example</string>
+    <string name="slidepolicy_example_description">This slide won\'t allow the user to proceed till you click the following checkbox</string>
+    <string name="please_check_to_continue">Please check to continue</string>
+
+    <!-- Margins Example -->
+    <string name="margins_checkbox">Enable / Disable margin</string>
+    <string name="margins_hide">This is not visible since the bar overlaps.</string>
+
+    <!-- Custom Layouts -->
+    <string name="sample_layout_1">Sample Layout 1</string>
+    <string name="button_1">Button 1</string>
+    <string name="sample_layout_2">Sample Layout 2</string>
+    <string name="button_2">Button 2</string>
+    <string name="sample_layout_3">Sample Layout 3</string>
+    <string name="button_3">Button 3</string>
+    <string name="sample_layout_4">Sample Layout 4</string>
+    <string name="button_4">Button 4</string>
+
 </resources>
